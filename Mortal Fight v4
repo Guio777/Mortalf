@@ -1,0 +1,271 @@
+import numpy as np
+import random
+
+#Esta funcion nada mas es para que se muestre un dialogo extra despues de que un jugador muera y 
+# se me ocurrio mas que nada por la payasada y por que me acorde de la pelicula de la mascara
+def mensaje_muerte(player):
+    print(f"{player.name} ia ia ia ia ia ia abrazame red esta oscureciendo cof cof dile a tia Emma que deje salir a toto cof cof dile al pequeño tim que no vendre a casa en navidad cof cof dile a skarlet que si la amo, procede a morirse")
+
+#esta clase esta pensada para manejar la defensa de los personajes, 
+# con un sistema de escudo que se desgasta con cada ataque recibido y 
+# una defensa balanceada que no es ni demasiado alta ni demasiado baja. 
+# Ademas, el daño siempre sera al menos 1 para evitar ataques que no hagan nada.
+class defensa():
+    def __init__(self, defense):
+        self.__defense = defense
+        self.ataques_normales = 0     
+
+# el uso de @property permite acceder a la defensa como un atributo normal, pero con la logica de validacion incluida en el setter. 
+# Esto hace que el codigo sea mas limpio y facil de usar, ya que no es necesario llamar a un metodo por ejemplo def defensa() para obtener el valor de la defensa, 
+# sino que se puede acceder directamente con player.defensa.
+    @property  
+    def defensa(self):
+        return self.__defense  
+
+    @property
+    def escudo(self):
+        return int(self.__defense)
+
+# el setter de defensa incluye una validacion para evitar que la defensa sea negativa, 
+# lo que podria causar problemas en el calculo del daño.
+    @defensa.setter
+    def defensa(self, nuevo_valor):
+        if nuevo_valor < 0:
+            raise ValueError("La defensa no puede ser negativa por que no tiene logica tener un escudo negativo jajaja")
+        self.__defense = nuevo_valor
+
+# la funcion recibir_ataque se encarga de calcular el daño recibido por el personaje, 
+# teniendo en cuenta su defensa use np para ser mas preciso y efeciente en el calculo.
+    def recibir_ataque(self, daño):
+        # la defensa efectiva se calcula con una distribucion normal basada en la defensa actual del personaje,
+        # pero con un factor de 0.3 para que no sea tan alta y el juego sea mas balanceado.
+        defensa_efectiva = np.random.normal(self.__defense * 0.3)
+        defensa_efectiva = max(0, defensa_efectiva)
+
+        # esto evita que el daño sea sero para evitar que el juego no termine
+        dano_real = max(1, daño - defensa_efectiva)
+
+        # se aplica una reduccion aleatoria al daño real para agregar un poco de impredecibilidad al combate
+        reduccion = np.random.uniform(0.85, 1.15)
+        dano_final = int(dano_real * reduccion)
+
+        # El escudo se desgasta con cada ataque hasta destruirce 
+        self.__defense = max(0, self.__defense - daño * 0.2)
+
+        self.health = max(0, self.health - dano_final)
+
+        return dano_final
+
+
+
+#Todas las clases son lo mismo con distinto diseño y todoas heredan la clase defensa solo que se llaman distinto 
+# pero en si son lo mismo solo fue para darle mas estetica al juego y qie se vea mejor
+class Melee(defensa):
+    def __init__(self, name, health, attack_power, special_attack):
+        #el super() se utiliza para llamar al constructor de la clase base defensa, 
+        # lo que permite inicializar la defensa del personaje con un valor predeterminado de 100.
+        super().__init__(100)
+        self.name = name
+        self.health = health
+        self.attack_power = attack_power
+        self.special_attack = special_attack
+
+#la ffuncion atack se encarga de dar los dos ataques y ahi una condicion para 
+# poder usar el especial que seria que nececitas haber hecho cuatro ataques normales 
+# y cada personaje tiene un nombre unico de su ataque especial.
+    def attack(self, opponent, tipo):
+        if tipo == 1:
+            damage = random.randint(0, self.attack_power)
+            self.ataques_normales += 1
+            print(f"{self.name} normal attack!")
+        else:
+            damage = random.randint(0, self.special_attack)
+            self.ataques_normales = 0
+            print(f"{self.name} SPECIAL attack!")
+
+        daño_real = opponent.recibir_ataque(damage)
+        print(f"{self.name} deals {daño_real} damage to {opponent.name}")
+
+    #  sirve para verificar si el personaje sigue vivo en caso de ser menor que 0 pues el jugador esta bien tieso jajaja y el combate termina
+    def is_alive(self):
+        return self.health > 0
+
+
+class Archer(defensa):
+    def __init__(self, name, health, attack_power, special_attack):
+        super().__init__(100)
+        self.name = name
+        self.health = health
+        self.attack_power = attack_power
+        self.special_attack = special_attack
+
+    def attack(self, opponent, tipo):
+        if tipo == 1:
+            damage = random.randint(0, self.attack_power)
+            self.ataques_normales += 1
+            print(f"{self.name} shoots a normal arrow!")
+        else:
+            damage = random.randint(0, self.special_attack)
+            self.ataques_normales = 0
+            print(f"{self.name} SPECIAL arrow!")
+
+        daño_real = opponent.recibir_ataque(damage)
+        print(f"{self.name} deals {daño_real} damage to {opponent.name}")
+
+    def is_alive(self):
+        return self.health > 0
+
+
+class Mage(defensa):
+    def __init__(self, name, health, attack_power, special_attack):
+        super().__init__(100)
+        self.name = name
+        self.health = health
+        self.attack_power = attack_power
+        self.special_attack = special_attack
+
+    def attack(self, opponent, tipo):
+        if tipo == 1:
+            damage = random.randint(0, self.attack_power)
+            self.ataques_normales += 1
+            print(f"{self.name} casts a basic spell!")
+        else:
+            damage = random.randint(0, self.special_attack)
+            self.ataques_normales = 0
+            print(f"{self.name} SPECIAL spell!")
+
+        daño_real = opponent.recibir_ataque(damage)
+        print(f"{self.name} deals {daño_real} damage to {opponent.name}")
+
+    def is_alive(self):
+        return self.health > 0
+
+
+class Evoquer(defensa):
+    def __init__(self, name, health, attack_power, special_attack):
+        super().__init__(100)
+        self.name = name
+        self.health = health
+        self.attack_power = attack_power
+        self.special_attack = special_attack
+
+    def attack(self, opponent, tipo):
+        if tipo == 1:
+            damage = random.randint(0, self.attack_power)
+            self.ataques_normales += 1
+            print(f"{self.name} summons a creature!")
+        else:
+            damage = random.randint(0, self.special_attack)
+            self.ataques_normales = 0
+            print(f"{self.name} SPECIAL summon!")
+
+        daño_real = opponent.recibir_ataque(damage)
+        print(f"{self.name} deals {daño_real} damage to {opponent.name}")
+
+    def is_alive(self):
+        return self.health > 0
+
+
+# Aqui es donde use la recusrsividad para mejorar el cobate
+
+#Esta funcion utuliza la recursividad para manejar el flujo de la pelea entre dos jugadores, alternando los turnos y verificando las condiciones de victoria después de cada ataque.
+def fight_recursive(player1, player2):
+
+    # if not es para verificar si el jugador esta vivo 
+    if not player1.is_alive():
+        print(f"{player1.name} has been defeated! {player2.name} wins!")
+        mensaje_muerte(player1)
+        return
+
+    if not player2.is_alive():
+        print(f"{player2.name} has been defeated! {player1.name} wins!")
+        mensaje_muerte(player2)
+        return
+
+    # Turno del jugador 1
+    print(f"\n{player1.name} (Vida: {player1.health} | Escudo: {player1.escudo})")
+    print(f"Normales: {player1.ataques_normales}/4")
+
+    try:
+        tipo = int(input("1 = Normal, 2 = Especial: "))
+    except:
+        tipo = 1
+
+    #es una condicio que puse para no solo usar el especial y hacer mas dinamico el juego
+    if tipo == 2 and player1.ataques_normales < 4 or player1.health >= 100:
+        print("Especial no disponible, usando normal")
+        tipo = 1
+
+    player1.attack(player2, tipo)
+
+    # verifica si rl jugador esta vivo si no lo esta termina el combate y muestra el mensaje de la pelicula de "la mascara" de jim carrey
+    if not player2.is_alive():
+        print(f"{player2.name} has been defeated! {player1.name} wins!")
+        mensaje_muerte(player2)
+        return
+
+    # turno del jugador 2
+    print(f"\n{player2.name} (Vida: {player2.health} | Escudo: {player2.escudo})")
+    print(f"Normales: {player2.ataques_normales}/4")
+
+    try:
+        tipo = int(input("1 = Normal, 2 = Especial: "))
+    except:
+        tipo = 1
+
+    if tipo == 2 and player2.ataques_normales < 4 or player2.health >= 100:
+        print("Especial no disponible, usando normal")
+        tipo = 1
+
+    player2.attack(player1, tipo)
+
+    # Si el jugador no esta vivo termina la pelea y muestra el mensaje de muerte, si no sigue con la recursividad
+    if not player1.is_alive():
+        print(f"{player1.name} has been defeated! {player2.name} wins!")
+        mensaje_muerte(player1)
+        return
+
+    
+    fight_recursive(player1, player2)
+
+
+#los personajes y sus atributos 
+
+Kraken = Archer("Kraken", 500, 80, 20)
+Osmar = Evoquer("Osmar", 500, 90, 10)
+Andrew = Mage("Andrew", 500, 85, 25)
+Javi = Mage("Javi", 500, 80, 20)
+Giogatsu = Melee("Giogatsu", 500, 95, 77)
+Jennifer = Melee("Jennifer", 999, 999, 999)  
+Leviatan = Archer("Leviatan", 500, 85, 20)
+Kino = Evoquer("Kino", 500, 90, 10)
+
+
+# ================= MENÚ =================
+# El menú permite a los jugadores seleccionar sus personajes y luego iniciar la pelea.
+personajes = [Kraken, Osmar, Andrew, Javi, Giogatsu, Jennifer, Leviatan, Kino]
+
+while True:
+    print("\nSelect your fighters:")
+    # se muestra la lista de personajes disponibles con su indice para que los jugadores puedan elegir.
+    for i, p in enumerate(personajes):
+        # se muestra el nombre de cada personaje en la lista para que los jugadores puedan elegir.
+        print(f"{i+1}. {p.name}")
+
+    # se solicita a los jugadores que ingresen el numero correspondiente a su personaje elegido, se valida la entrada y luego se inicia la pelea con los personajes seleccionados.
+    try:
+        p1 = int(input("Player 1: ")) - 1
+        p2 = int(input("Player 2: ")) - 1
+
+        # se asignan los personajes seleccionados a player1 y player2 para luego iniciar la pelea con la funcion fight_recursive.
+        player1 = personajes[p1]
+        player2 = personajes[p2]
+
+        fight_recursive(player1, player2)
+
+        if int(input("\n1. Continue\n2. Exit\n")) != 1:
+            print("SEE YOU IN THE AFTERLIFE!")
+            break
+
+    except:
+        print("Invalid input, try again.")
